@@ -24,7 +24,7 @@ async function enqueueSave(){if(!curObj)return;queue.push({...curObj,updatedAt:D
 async function flush(){const base=fbURL();if(!base||!navigator.onLine||!queue.length)return;try{for(let u of queue.splice(0,queue.length)){await fetch(`${base}/players/${encodeURIComponent(u.name)}.json`,{method:'PUT',body:JSON.stringify(u)});}saveJ(LS_Q,queue);document.getElementById('net').innerText='● online-synced';}catch{document.getElementById('net').innerText='● offline-queued('+queue.length+')';}}
 window.addEventListener('online',flush);setInterval(flush,10000);
 // realtime listener via EventSource (RTDB streaming)
-let es=null;function listenRT(cb){try{if(es)es.close();const base=fbURL();if(!base)return;es=new EventSource(`${base}/players.json`);es.onmessage=e=>{if(e.data&&e.data!=='null'){try{cb(JSON.parse(e.data));}catch{}}};es.onerror=()=>{document.getElementById('net').innerText='● polling';};}catch{}}
+let esRT=null;function listenRT(cb){try{if(esRT)esRT.close();const base=fbURL();if(!base)return;esRT=new EventSource(`${base}/players.json`);esRT.onmessage=e=>{if(e.data&&e.data!=='null'){try{cb(JSON.parse(e.data));}catch{}}};esRT.onerror=()=>{document.getElementById('net').innerText='● polling';};}catch{}}
 function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 // i18n minimal
 const I={en:{play:'Play',start:'Start',next:'Next →',known:'Knew it',review:'Review'},zu:{play:'Dlala',start:'Qala',next:'Okulandelayo →',known:'Bengikwazi',review:'Buyekeza'},af:{play:'Speel',start:'Begin',next:'Volgende →',known:'Ek het geweet',review:'Hersien'},fr:{play:'Jouer',start:'Commencer',next:'Suivant →',known:'Je savais',review:'Revoir'}};let LANG='en';function setLang(l){LANG=l;renderPlayers();}
