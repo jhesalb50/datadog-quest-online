@@ -31,10 +31,222 @@ const I={en:{play:'Play',start:'Start',next:'Next →',known:'Knew it',review:'R
 function t(k){return (I[LANG]&&I[LANG][k])||I.en[k];}
 // DATA
 const CARDS=[["Monitoring vs Observability?","Monitoring: Is it working? reactive. Observability: Why? proactive. Monitoring ⊂ Observability."],["3 Pillars?","Metrics trends • Logs events • Traces path."],["Beyond pillars?","Profiles (function) + RUM (UX) + Events/changes (deploys)."],["Trace vs Span?","Trace journey (ID). Span unit (parent, duration)."],["Service vs Resource?","Service checkout-api. Resource POST /pay."],["Explorer vs Service?","Explorer live search. Service health/deps/deploys."],["Trace vs Profiler?","Trace WHICH SERVICE. Profiler WHICH LINE. Flame 8d."],["Sampling?","Head cheap, Tail keeps errors. Ingestion remote."],["Retention?","Keep 15d. Span-metrics → SLOs."],["Correlate?","Logs trace_id + RUM→trace + synth→trace + DBM."],["Watchdog?","Auto RCA. Error groups. Change overlays deploys."],["RUM vs Synth?","RUM real LCP/INP/CLS + replay. Synth proactive."],["SLO?","SLI metric, SLO 99.9%, budget=100-SLO. Multi-burn."],["OTel?","API/SDK/Collector/OTLP. Dynamic no-redeploy."],["Agent/AI?","LLM tokens/quality. Agent fan-out. Guard blocks injection."]];
-const BASE_EXAM=[["p99?|Worst 1%|Average|Best|Price",0],["Apdex?|Satisfied ratio|Stock|Printer|Uptime",0],["Propagation?|W3C/B3 headers|Email|Copy|None",0],["Flame width?|Time widest=hottest|Height|Color|Random",0],["trace_id in logs?|Exact logs side-by-side|Nothing|Bills|Emails",0],["Cardinality danger?|Bill shock|Free|Safe|None",0],["DBM shows?|Query+waits+explain|Cafeteria|Nothing|Cache",0],["Service map?|Who calls whom|Org|Roads|None",0],["Noisy neighbor?|CPU steal+latency|Music|None|Human",0],["eBPF?|Kernel no-change|Nothing|Manual|Bills",0],["AI Guard?|Block injection|Physical|Garden|None",0],["Head vs tail?|Head start Tail full-trace smart|Same|Reverse|None",0],["SLO burn?|Fast+slow cuts noise|Single|None|Doors",0],["Serverless?|Lambda ext cold-start|Impossible|Mainframe|None",0],["Retention?|15d|15y|15s|0",0],["Thread-level?|Method/line/thread|Host only|Nothing|Disk",0],["Structured logs?|Facets|Grep|Unsearch|No",0],["RUM vitals?|LCP/INP/CLS|Uptime|Ping|Salary",0],["OTel parts?|API/SDK/Collector/OTLP|UI|DB|Logs",0],["GPU?|util/mem/throttle|CPU|None|Price",0]];
-const CODE_Q=[["Trace JSON: trace_id same, parent null = ?|Root span|Child|Log|Metric",0],["Span duration 3800ms, child DB 3600ms → ?|DB bottleneck|Frontend|Network DNS|CPU idle",0],["Flame: widest frame checkout.authorize() → ?|Optimize that func|Ignore|Add hosts|Delete logs",0],["DQL: avg:trace.duration{env:prod,service:pay} by version → ?|Compare releases|Count users|List hosts|Bill",0],["Log pattern spike + deploy marker → ?|Likely deploy regression|Cosmic rays|Printer|Ignore",0],["p95 200ms p99 4s → ?|Tail outlier, check tail sampling/profiler|Fine|Avg fine|No issue",0],["Explain: Seq Scan on payments → ?|Missing index|Perfect|No DB|Cache",0],["SLO burn 14x fast window → ?|Page, freeze deploys|Ignore|More features|Delete SLO",0],["RUM LCP 5s + backend 200ms → ?|Frontend asset issue, check replay|Backend DB|Add DB|Add hosts",0],["Agent fan-out 12 tools, 1 retrieval slow → ?|Cache/fix that tool span|Scale all|Block AI|Nothing",0],["OTel span missing across service → ?|Propagator headers broken|No code|DB down|DNS",0],["Lock profile red → ?|Contention, reduce critical section|More CPU|More RAM|Ignore",0],["Custom metric cardinality 500k → ?|Drop high tags|Keep all|Add more|Ignore bill",0],["Synth fail 1 region only → ?|Regional/network, check NPM/DNS|Global outage|Code always|Ignore",0],["Mobile ANR + trace ok → ?|Main-thread block, need profiles|Backend|Network|Nothing",0],["K8s OOMKilled + latency → ?|Memory limit, check heap profile|CPU|Add nodes|Ignore",0],["Log: trace_id=abc error timeout → ?|Pivot to trace abc|Grep all|Delete|Restart",0],["Version compare v2.3 latency +30% → ?|Rollback/flag off + profile diff|Scale 10x|Add logs|Hope",0],["MCP tool error rate up → ?|Agent obs tool span + guard|Ignore|More tools|Less logs",0],["Watchdog outlier + change event → ?|Auto-RCA likely deploy|Manual only|Ignore|Delete",0]];
-function fullPool(){let a=BASE_EXAM.map(s=>{let p=s.split('|'),q=p[0],o=p.slice(1),c=+o.pop();return{cat:'Tech',q,opts:o,a:c,e:'See docs + in-game explanation.'};});CODE_Q.forEach(s=>{let p=s.split('|'),q=p[0],o=p.slice(1),c=+o.pop();a.push({cat:'Code',q,opts:o,a:c,e:'Scenario reasoning.'});});customQ.forEach(c=>a.push(c));return a;}
+const FULL200=[// 1-15 OBS FUNDAMENTALS
+["Fundamentals","Observability vs monitoring core difference?","Monitoring asks Is it working (reactive) vs Observability asks Why (proactive)|Same thing|Monitoring is broader|Neither uses data",0,"Monitoring = threshold alerts. Observability = investigate novel failures."],
+["Fundamentals","Three pillars of observability?","Metrics, Logs, Traces|CPU,GPU,TPU|Alerts, Tickets, Chats|Hosts, Pods, VMs",0,"Metrics broad, logs granular, traces path."],
+["Fundamentals","Metrics best for?","Trend analysis, forecasting health over time|Single request debug|User session replay|Code line profiling",0,"CPU, memory, req/error rate."],
+["Fundamentals","Logs best for?","Granular event debug: what happened when|Aggregated trends|Request path|CPU flame",0,"Error messages, transactions."],
+["Fundamentals","Traces best for?","Request path + latency across services|Host CPU avg|Log storage|Billing",0,"Bottleneck diagnosis."],
+["Fundamentals","Beyond 3 pillars includes?","Profiles + RUM sessions + Events/changes|More dashboards only|Printers + fax|Nothing",0,"Trace=service slow, profile=function slow."],
+["Fundamentals","Golden correlation rule?","Shared tags pivoting beats separate tools|More tools always better|Tags useless|Only one signal needed",0,"High-cardinality queryable together."],
+["Fundamentals","High-cardinality means?","Many unique tag combos (userId, version, endpoint) you can slice|Low data|Only 3 metrics|No labels",0,"Enables unasked questions."],
+["Fundamentals","Observability backend must do?","Transform, catalog, analyze, store scale with volume|Only display static PNG|Delete data|Send fax",0,"Scale storage/compute with telemetry."],
+["Fundamentals","Agent role?","Collect, refine, standardize, enrich, tag, export|Write business logic|Replace DB|Mine coins",0,"Low overhead, secure, remote-managed."],
+["Fundamentals","SDK/instrumentation role?","Generate telemetry from code with sampling|Store bills|Design logos|Do payroll",0,"APIs for spans, metrics, logs."],
+["Fundamentals","SaaS vs self-hosted OSS tradeoff?","SaaS scales/stores for you vs OSS you maintain|Same|OSS scales auto|SaaS never scales",0,"Datadog argument for SaaS."],
+["Fundamentals","Why unified platform?","Single pane reduces MTTR vs swivel-chair|More tabs fun|Slower|Costlier always",0,"Correlate in one query."],
+["Fundamentals","Proactive vs reactive?","Observability proactive investigate, monitoring reactive alert|Reverse|Both reactive|Both do nothing",0,"Watchdog anomaly = proactive."],
+["Fundamentals","Novel failures need?","Exploratory query on correlated data, not just preset dashboards|Only preset threshold|Restart only|Ignore",0,"Unknown-unknowns."],
+// 16-40 APM TRACING
+["APM Tracing","What is a trace?","End-to-end journey of one request across services|Single CPU sample|One log line|One host metric",0,"Stitched by trace ID."],
+["APM Tracing","What is a span?","One unit of work (service call, DB query) within trace|Whole journey|Dashboard|Alert",0,"Has parent ID, duration, tags."],
+["APM Tracing","Parent-child in traces?","Child span caused by parent, forms tree|Unrelated|Only siblings|Random",0,"Shows fan-out."],
+["APM Tracing","Service vs Resource?","Service = app component, Resource = specific endpoint/query|Same|Service=host, Resource=user|Neither",0,"Service: checkout-api, Resource: POST /pay."],
+["APM Tracing","Trace Explorer used for?","Live search/filter traces by tags, latency, errors|Edit code|Pay invoices|Manage users",0,"Pivot to logs/metrics."],
+["APM Tracing","Service Page shows?","Health, latency/error/apdex, deps, deploys, top resources|Cafeteria menu|Stock chart|Email",0,"Version compare during deploy."],
+["APM Tracing","Single Step Instrumentation?","Agent + auto-instrument in one step, no code change/restart|Full rewrite|Manual soldering|Reboot factory",0,"Fastest time-to-value."],
+["APM Tracing","When custom instrumentation?","Need manual spans, custom tags, fine control|Never|Only for hello-world|Only for static sites",0,"Datadog SDKs + Dynamic Instrumentation."],
+["APM Tracing","Distributed context propagation?","Pass trace IDs via headers across services|Copy-paste logs|Email IDs|No passing",0,"W3C, B3 headers."],
+["APM Tracing","Sampling head vs tail?","Head decides at start (cheap), tail decides after seeing full trace (smart keep errors)|Same|Tail faster|Head keeps all",0,"Tail keeps interesting outliers."],
+["APM Tracing","Ingestion Controls do?","Set sample rates by service/endpoint remotely|TV volume|Delete users|Change password",0,"Visibility vs cost."],
+["APM Tracing","Retention filters do?","Keep selected spans 15 days for analysis|Keep forever free|Delete in 1s|Keep 15 years",0,"Error/high-latency keep."],
+["APM Tracing","Span-based metrics allow?","SLOs/dashboards/monitors from any tag without re-ingest|Nothing|Only print|Only delete",0,"e.g., errors by version."],
+["APM Tracing","APM + Logs correlation?","See logs for exact request/service/version side-by-side|Unrelated|Only metrics|Only billing",0,"Jump span→logs."],
+["APM Tracing","APM + RUM correlation?","Link frontend session to backend trace|Link printer to backend|No link|Link email",0,"Backend impact on UX."],
+["APM Tracing","APM + Synthetics?","Link synthetic test failure to backend traces|Link to weather|No link|Link to HR",0,"Frontend+backend troubleshooting."],
+["APM Tracing","APM + DBM?","See DB query + explain plan in span context|See cafeteria|No DB|Only cache",0,"Slow query root cause."],
+["APM Tracing","APM + Network?","See network calls/hops contrib to latency|See roads|No network|Only wifi password",0,"Service dependencies."],
+["APM Tracing","Apdex?","Satisfied/tolerated/frustrated ratio for latency SLO|Apple index|Stock index|Printer index",0,"e.g., <400ms satisfied."],
+["APM Tracing","p50/p95/p99?","Percentile latencies; p99 = worst 1%|Averages|Only p100|Prices",0,"Tail matters for UX."],
+["APM Tracing","Error Tracking grouping?","Intelligently groups same errors into issues|Shows every raw error|Hides errors|Deletes",0,"Noise reduction."],
+["APM Tracing","Change Tracking?","Overlays deploys/flags/configs on perf graphs|Tracks weather|Tracks packages|No tracking",0,"Fastest root cause often deploy."],
+["APM Tracing","Version compare?","Compare latency/errors/infra/profiling before/during/after release|Compare pizzas|No compare|Compare fonts",0,"Canary analysis."],
+["APM Tracing","Serverless tracing?","Auto-instrument Lambda/Azure via extensions|Impossible|Manual only mainframe|No serverless",0,"Cold-start visibility."],
+["APM Tracing","Thread-level tracing gives?","Method/code-line/thread time + resource use|Only host CPU|Only disk|Only RAM total",0,"Code-level bottleneck."],
+// 41-50 PROFILER
+["Profiler","Continuous Profiler answers?","Which function/line spends CPU/memory/IO|Which city datacenter|Which CEO|Which bill",0,"Trace=service, profile=function."],
+["Profiler","Low overhead via?","JDK Flight Recorder, eBPF, sampling|100% CPU spin|Stop prod|Reboot",0,"Always-on in prod."],
+["Profiler","Flame graph reads?","X-width = time, Y = stack depth, widest = hottest|Height = cost|Color = price|Random art",0,"Top = leaf functions."],
+["Profiler","Profile types?","CPU time, heap alloc, lock wait, IO|Only CPU|Only disk size|Only salary",0,"Per language differs."],
+["Profiler","Tags on profiles?","Filter by host/service/version/env|No tags|Only color|Only date",0,"Slice any dimension."],
+["Profiler","Trace→Profile link?","Jump span to Profiles tab for code line|No link|Email link|Manual copy",0,"Auto-linked if both enabled."],
+["Profiler","Compare profiles?","Diff time/env/deploy to explain regression|Compare photos|No diff|Compare shoes",0,"Understand why different."],
+["Profiler","Profile metrics use?","Top CPU by method, alloc by thread in dashboards|Only billing|Only HR|Nothing",0,"Track over deploys."],
+["Profiler","Memory leak hunt?","Rising alloc + retained heap in profiles + GC metrics|Guess|Restart only|Ignore",0,"Alloc flame + heap."],
+["Profiler","Lock contention?","Wall-time + lock profiles show blocked threads|CPU only|No locks|Only network",0,"Thread timeline."],
+// 51-62 LOGS/METRICS
+["Logs/Metrics","Structured logs benefit?","Query by attributes (service, version, user)|Unsearchable|Only text grep|No benefit",0,"Facets vs regex."],
+["Logs/Metrics","Log + Trace connect via?","Inject trace_id into logs|Manual copy|No connect|Email",0,"Side-by-side view."],
+["Logs/Metrics","Custom metrics danger?","Cardinality explosion → bill shock|No cost|Free infinite|No danger",0,"Limit tags."],
+["Logs/Metrics","Metrics vs events?","Metrics aggregated numbers, events discrete changes (deploys)|Same|Events useless|Metrics useless",0,"Events overlay = fast RCA."],
+["Logs/Metrics","Log sampling/indexing?","Ingest all, index/filter valuable, archive rest|Index everything forever free|Delete all|Print all",0,"Cost control."],
+["Logs/Metrics","Live tail vs search?","Tail real-time stream, search historical indexed|Same|Neither|Only tail",0,"Debug live incident."],
+["Logs/Metrics","Facets/patterns?","Auto-cluster similar logs to find outliers|No clustering|Only manual|Only delete",0,"Error spike grouping."],
+["Logs/Metrics","DBM + APM?","Query text + wait events + hosts in span|No DB|Only files|Only cache",0,"Missing index proof."],
+["Logs/Metrics","Cloud cost mgmt needs?","Attribute spend by service/team + idle detection|Guess|No attribution|Only total",0,"$ per 1k spend model."],
+["Logs/Metrics","Network Performance?","Flow, DNS, TCP retrans, service deps|Only wifi password|No network|Only cables",0,"Dependency map."],
+["Logs/Metrics","Infra metrics + APM?","Correlate CPU/mem/disk with latency spike|Unrelated|Only infra|Only APM",0,"Noisy neighbor?"],
+["Logs/Metrics","Anomaly detection on metrics?","ML baseline + bands, alert on deviation|Static only|No ML|Manual eyeball",0,"Watchdog."],
+// 63-72 RUM/SYNTH
+["RUM/Synth","RUM measures?","Real user: LCP, INP, CLS, errors, session replay|Synthetic only|Server CPU|Nothing",0,"What user felt."],
+["RUM/Synth","Synthetics measures?","Proactive API/browser checks from locations|Real users only|Nothing|HR checks",0,"Uptime before users complain."],
+["RUM/Synth","Session replay + trace?","Watch user clicks then jump to backend trace|Unlinked|Only video|Only trace",0,"UX→backend proof."],
+["RUM/Synth","Core Web Vitals?","LCP<2.5s, INP<200ms, CLS<0.1|Only uptime|Only ping|Only salary",0,"Google UX."],
+["RUM/Synth","Single Step RUM?","Auto-instrument frontend without code change|Full rewrite|No RUM|Manual only",0,"DASH 2026 addition."],
+["RUM/Synth","Journey Monitoring?","Funnel: landing→cart→pay drop-off|Single page only|No funnel|Only backend",0,"Conversion impact."],
+["RUM/Synth","Mobile RUM?","Crash, ANR, cold start, backend-linked|Only web|No mobile|Only SMS",0,"iOS/Android SDKs."],
+["RUM/Synth","Browser test vs API test?","Browser runs scripted clicks, API hits endpoint|Same|Neither|Only ping",0,"E2E vs backend."],
+["RUM/Synth","Frontend error + source maps?","Unminify stack to original code line|Minified only|No errors|Ignore",0,"Debug prod JS."],
+["RUM/Synth","RUM sampling?","Sample sessions to control bill, keep errors|Keep all forever|Delete all|No control",0,"High traffic cost."],
+// 73-82 INFRA/NET/DB
+["Infra","K8s observability needs?","Pod/node/cluster metrics + logs + traces by deployment|Only nodes|Only cloud bill|Nothing",0,"HPA, OOMKills."],
+["Infra","Containers vs hosts billing pain?","Per-host vs per-container models change cost|Same|Free|No billing",0,"Ephemeral churn."],
+["Infra","eBPF gives?","Kernel-level network/profile without code change|User manual|Nothing|Only billing",0,"groundcover style."],
+["Infra","DB wait events?","Lock, IO, CPU waits explain slow query|Only row count|No waits|Only uptime",0,"DBM deep."],
+["Infra","Explain plan?","DB execution steps + index use|Travel plan|No plan|Only code",0,"Missing index proof."],
+["Infra","Service map/dependencies?","Graph who calls whom + health|Org chart|No map|Road map",0,"Blast radius."],
+["Infra","DNS/NPM failure signs?","NXDOMAIN, high latency, retransmits, TLS errors|Only CPU|No signs|Only disk",0,"Network tab."],
+["Infra","Autoscaling signals?","Latency + queue + CPU + SLO burn, not CPU alone|CPU alone|Nothing|Manual only",0,"Avoid flapping."],
+["Infra","Noisy neighbor?","Shared host CPU steal hurts latency, seen via infra+APM|Loud music|No effect|Only human",0,"Correlate host steal."],
+["Infra","Remote SDK upgrades?","Update instrumentation fleet centrally|SSH each host|Reinstall all|No upgrades",0,"DASH 2026."],
+// 83-90 SLO/MONITOR
+["SLO/Incident","SLI/SLO/SLA?","SLI metric, SLO target (99.9%), SLA contract|Same|No difference|Only SLA",0,"Error budget = 100-SLO."],
+["SLO/Incident","Error budget?","Allowed failures before freeze; burn rate alerts|Unlimited|Money|No budget",0,"Balance velocity/reliability."],
+["SLO/Incident","Multi-window burn?","Fast+slow windows reduce false positives|Single window|No windows|Only doors",0,"Best practice."],
+["SLO/Incident","Monitor vs SLO?","Monitor threshold alert, SLO burn tracks objective|Same|Neither|Only monitor",0,"SLO-based alert smarter."],
+["SLO/Incident","On-call runbook link?","Service Catalog: owner, runbook, auto-rollback|No link|Phone book|Cookbook only",0,"Faster MTTR."],
+["SLO/Incident","Incident timeline needs?","Change events + deploys + alerts unified|Only chat|Only email|No timeline",0,"Postmortem."],
+["SLO/Incident","MTTD vs MTTR?","Detect time vs Resolve time; Watchdog cuts both|Same|Neither|Only MTBF",0,"Outliers at query time."],
+["SLO/Incident","Auto-remediation?","Bits AI investigate + rollback/workflow|Manual only|No auto|Delete prod",0,"Autonomy goal DASH 26."],
+// 91-100 OTEL/INSTR/AI
+["OTel/AI","OpenTelemetry parts?","API + SDK + Collector + OTLP protocol|Only UI|Only DB|Only logs",0,"Vendor-neutral."],
+["OTel/AI","Hybrid OTel + Datadog?","Send OTel to Datadog native, keep context|Either/or|Impossible|Only Datadog",0,"No trade-offs."],
+["OTel/AI","Dynamic Instrumentation?","Add logs/spans in prod without redeploy|Redeploy always|No prod debug|Restart only",0,"Live debugging."],
+["OTel/AI","Sampling tail smart?","Keep errors/slow, drop healthy|Keep all|Drop errors|Random only",0,"Cost + keep signal."],
+["OTel/AI","Labels vs envs?","Tags: env, service, version enable slicing|No tags|Only env|Only host",0,"Unified tagging."],
+["OTel/AI","LLM observability tracks?","Tokens, cost, latency, quality, hallucinations|Only CPU|Only disk|Nothing",0,"Prompt→completion."],
+["OTel/AI","Agent observability tracks?","Multi-step tool calls, sub-agents, retrieval fan-out|Single span only|No tools|Only chat",0,"One request many calls."],
+["OTel/AI","AI Guard defends?","Prompt injection, poisoning, jailbreak|Physical guard|Garden|No defense",0,"Secure AI agents."],
+["OTel/AI","GPU monitoring?","Util, mem, temp, throttling for AI workloads|Only CPU|No GPU|Only price",0,"AI spend attribution."],
+["OTel/AI","MCP Apps?","Model Context Protocol apps connect AI to observability|No AI|Only email|Only docs",0,"DASH 2026."],
+["Trace JSON","In trace JSON trace_id=abc span_id=1 parent=null means?","Root span|Child span|Log line|Metric",0,"Root, start of trace. No parent."],
+["Trace JSON","Two spans same trace_id, span B parent_id = span A span_id means?","B child of A|A child of B|Unrelated|Same span",0,"Parent links form tree."],
+["Trace JSON","Missing trace across services most likely?","Propagation headers dropped|DB slow|Disk full|CPU",0,"Check W3C/B3 injection."],
+["Trace JSON","service:pay resource:POST /charge tag version:v2.3 lets you?","Slice by version for regression|Nothing|Delete|Bill only",0,"Tags enable version compare."],
+["Trace JSON","Error span has error:true + long duration, tail sampling should?","Keep it|Drop it|Sample randomly|Ignore",0,"Tail keeps interesting."],
+["Trace JSON","Single Step adds mans?","No code change auto-instrument|Rewrite|Manual|Recompile",0,"Agent does it."],
+["Trace JSON","OTLP endpoint sends to Datadog, need?","OTel Collector exporter to Datadog|Nothing|Delete SDK|Only logs",0,"Hybrid works."],
+["Trace JSON","Dynamic Instrumentation adds?","Live span/log without redeploy|Requires downtime|Only restart|Never",0,"Prod debugging."],
+["Trace JSON","Cold start span 2.5s init + 200ms handler means?","Init overhead, provisioned concurrency|DB|Frontend|Network",0,"Serverless init."],
+["Trace JSON","RUM session linked via trace_id shows?","Backend impact on UX|Nothing|Bills|Emails",0,"Frontend-backend link."],
+["Trace JSON","Synthetic failure trace shows DNS 3s + TCP ok means?","DNS issue|Code bug|DB|CPU",0,"NPM DNS tab."],
+["Trace JSON","DB span: SELECT * payments WHERE id=? 3.8s + Seq Scan means?","Missing index|Perfect|Cache|Network",0,"Explain plan proof."],
+["Trace JSON","Change event deploy v2.3 at 02:00 + latency jump means?","Likely regression|Coincidence|Weather|Printer",0,"Change Tracking."],
+["Trace JSON","Apdex 0.95 with 400ms threshold means?","95% satisfied|5% satisfied|Fail|No data",0,"Satisfied ratio."],
+["Trace JSON","p50 120ms p99 4s means?","Tail outlier dominates UX|All good|Avg ok|No tail",0,"Check profiler/tail."],
+["Profiler","Flame widest block authorize.retry() 70% means?","Optimize retry loop|Ignore|Add hosts|Delete logs",0,"Width = time."],
+["Profiler","Flame tall narrow stack means?","Deep call chain, little time each|Hot|Idle|Error",0,"Height = depth."],
+["Profiler","CPU 90% + wall 95% both high means?","CPU-bound hot loop|IO wait|Lock|Idle",0,"Both high = spinning."],
+["Profiler","CPU 10% wall 90% means?","Blocked on IO/lock|Hot|Perfect|No issue",0,"Wait, check lock/IO profile."],
+["Profiler","Heap alloc rising + GC pause up means?","Leak/churn, check alloc flame|Fine|Add CPU|Network",0,"Alloc + GC."],
+["Profiler","Lock profile red in checkout means?","Contention serialize|Fine|CPU hot|Network",0,"Reduce critical section."],
+["Profiler","Compare v2.2 vs v2.3 new frame appears means?","Regression from new code|Improvement|Unrelated|Random",0,"Diff deploys."],
+["Profiler","Thread timeline blocked stripes means?","Threads waiting|Running|Dead|Idle fine",0,"Blocked view."],
+["Profiler","JFR + eBPF low overhead allows?","Always-on prod|Only dev|Never|Once",0,"Sampling profiler."],
+["Profiler","Span 800ms, profile shows line 214 loop 750ms means?","Fix line 214|Scale hosts|Add logs|Ignore",0,"Trace→profile link."],
+["Profiler","Top method by CPU in dashboard comes from?","Profile metrics aggregated|Manual|Billing|Random",0,"Top CPU by method."],
+["Profiler","IO profile high read means?","Disk/network wait|CPU hot|Lock|Nothing",0,"IO type."],
+["Profiler","Memory leak hunt needs?","Heap + alloc + retention growth|CPU only|Logs only|Nothing",0,"Combined."],
+["Profiler","Recursion deep flame + stack overflow risk means?","Refactor iterative|Ignore|Add RAM|More logs",0,"Depth risk."],
+["Profiler","GC thrash + latency correlation means?","Heap pressure|Network|DNS|Perfect",0,"Infra+APM correlate."],
+["DQL/Metrics","avg:trace.duration{env:prod,service:pay} by version does?","Compare release latency|Count users|List hosts|Bill",0,"Span metrics slice."],
+["DQL/Metrics","sum:trace.errors{service:api} / sum:trace.hits gives?","Error rate|Latency|Apdex|Cost",0,"Ratio query."],
+["DQL/Metrics","anomalies(avg:latency, baseline) detects?","Deviation from ML band|Static only|Nothing|Manual",0,"Watchdog."],
+["DQL/Metrics","Top custom metric cardinality driver?","user_id unbounded tag|env 3 vals|service 20|version 10",0,"High tags explode."],
+["DQL/Metrics","Metric with env,service,version enables?","Pivot any dimension|Nothing|Only env|Only host",0,"Unified tagging."],
+["DQL/Metrics","Log-derived metric from errors by version gives?","Release health without re-instrument|Nothing|Only infra|Only bill",0,"Generate from logs."],
+["DQL/Metrics","Forecast CPU for HPA should use?","Latency+queue+CPU, not CPU alone|CPU alone|Nothing|Manual",0,"Multi-signal."],
+["DQL/Metrics","SLO burn alert windows 1h+6h means?","Fast+slow confirm|Single|No windows|Doors",0,"Reduces noise."],
+["DQL/Metrics","Dashboard template var $service means?","One dashboard many services|Static|Single|None",0,"Templating."],
+["DQL/Metrics","Monitor avg last 5m > p99 baseline means?","Regression alert|Fine|Ignore|Delete",0,"Threshold vs baseline."],
+["DQL/Metrics","Notebook export flame 1yr vs 8d default gives?","Long evidence for postmortem|Nothing|Shorter|Delete",0,"Export retains."],
+["DQL/Metrics","Cost attribution by team needs tag?","team:payments cost slice|No tags|Only host|Only random",0,"FinOps slice."],
+["DQL/Metrics","Idle resource detection uses?","CPU/mem low + no traffic|High CPU|Errors|Nothing",0,"Rightsize."],
+["DQL/Metrics","NPM flow high retransmit means?","Loss/congestion|Perfect|DNS|CPU",0,"Network tab."],
+["DQL/Metrics","DNS NXDOMAIN spike + latency means?","Bad endpoint/config|Code perfect|DB|CPU",0,"DNS failure."],
+["Logs","Parse JSON log with trace_id field enables?","Jump log→trace|Nothing|Delete|Print",0,"Correlation key."],
+["Logs","Facet service:pay status:error groups?","All pay errors|All hosts|Nothing|Bills",0,"Structured query."],
+["Logs","Pattern cluster 12k same template means?","One issue, Error Tracking group|12k issues|Ignore|Delete",0,"Clustering."],
+["Logs","Live tail during deploy shows?","Real-time errors|History only|Nothing|Billing",0,"Stream."],
+["Logs","Archive cold logs to S3 + rehydrate means?","Cheap retain + search when needed|Delete|Keep hot forever|Print",0,"Cost tier."],
+["Logs","Sensitive field redaction at agent means?","PII scrub before send|Send raw|Ignore|Log more",0,"Secure pipeline."],
+["Logs","Log sampling keep errors drop debug means?","Signal + cost balance|Keep all|Drop all|Random",0,"Index filters."],
+["Logs","Side panel span→logs shows?","Only that request logs|All logs|No logs|Billing",0,"Scoped context."],
+["Logs","Multi-line stack trace grouping needs?","Source + grouping rule|Single line|No rule|Delete",0,"Exception handling."],
+["Logs","Audit log for deploys gives?","Who changed what when|Nothing|Weather|Sports",0,"Change events."],
+["APM Adv","Service dependency map fan-out 1→20 slow means?","Downstream bottleneck|Frontend|Perfect|Ignore",0,"Blast radius."],
+["APM Adv","Queue span wait 2s + processing 100ms means?","Backpressure, scale workers|DB|Add frontend|Nothing",0,"Async wait."],
+["APM Adv","Cache hit ratio drop + latency up means?","Miss storm, check invalidation|DB perfect|Network perfect|Ignore",0,"Cache layer."],
+["APM Adv","Retry storm 3x + timeout means?","Amplify load, backoff+jitter|More retries|Add hosts|Ignore",0,"Retry budget."],
+["APM Adv","Canary 5% errors 10x means?","Halt promote, compare versions|Promote|Ignore|Scale",0,"Progressive."],
+["APM Adv","Feature flag off fixes p99 means?","New path regression|Infra|DNS|Weather",0,"Flag rollback."],
+["APM Adv","SLO error budget 0 → should?","Freeze features, fix reliability|Ship more|Ignore|Delete SLO",0,"Policy."],
+["APM Adv","Synthetic API 500 + trace DB timeout means?","Backend DB, not test flake|Flake|Network only|Ignore",0,"Trace proof."],
+["APM Adv","Mobile crash stack + backend trace ok means?","Client bug, source maps|Backend|Network|Nothing",0,"Client side."],
+["APM Adv","Browser INP 800ms backend 100ms means?","Main-thread JS heavy|Backend|DB|Network",0,"Frontend."],
+["APM Adv","Journey drop cart→pay 40% + slow pay trace means?","Perf hurts conversion|Unrelated|Design only|Ignore",0,"Funnel+trace."],
+["APM Adv","TLS handshake 1.5s in trace means?","Handshake/config, session reuse|Code|DB|Perfect",0,"Network waterfall."],
+["APM Adv"," gRPC status DEADLINE_EXCEEDED + span timeout means?","Downstream slow|OK|Auth|Nothing",0,"RPC deadline."],
+["APM Adv","Kafka lag rising + consumer latency means?","Under-provisioned consumers|Perfect|DB|Frontend",0,"Pipeline."],
+["APM Adv","DB deadlock log + two spans lock wait means?","Order locks consistently|Ignore|Add hosts|More retries",0,"Deadlock fix."],
+["RUM/Synth","LCP 5.2s image-heavy means?","Optimize assets/CDN|Backend DB|Add DB|Ignore",0,"Frontend perf."],
+["RUM/Synth","CLS 0.4 layout shift means?","Reserve sizes, avoid inject|Backend|Add hosts|Nothing",0,"Stability."],
+["RUM/Synth","Session replay click rage + error means?","UX dead end, fix flow|Perfect|Backend only|Ignore",0,"Qualitative."],
+["RUM/Synth","Browser test step fail selector missing means?","UI changed, update test|Backend down|Network|Ignore",0,"E2E maintenance."],
+["RUM/Synth","API test 401 after deploy means?","Auth/config regression|Network|Perfect|Ignore",0,"Contract."],
+["RUM/Synth","RUM sample 100% high traffic means?","Bill explode, sample + keep errors|Fine|Free|Ignore",0,"Sampling control."],
+["RUM/Synth","Source maps map minified→original means?","Debug prod JS line|Hide|Obfuscate|Delete",0,"Symbolication."],
+["RUM/Synth","ANR main thread 5s means?","Block, move off-thread|Backend|Add RAM|Ignore",0,"Mobile."],
+["RUM/Synth","Cold start 3s mobile means?","Init heavy, lazy load|Backend|Network|Perfect",0,"Startup."],
+["RUM/Synth","Funnel StepA 10k StepB 2k means?","80% drop, investigate|Fine|Perfect|Ignore",0,"Conversion."],
+["SLO/Inc","SLI good events / total events = ?","Compliance ratio|Latency|Cost|Nothing",0,"SLO math."],
+["SLO/Inc","99.9% 30d error budget minutes?","~43m|43h|0|1000m",0,"0.1% of 43k min."],
+["SLO/Inc","Burn 10x means budget gone in?","1/10 window|Never|Longer|Infinite",0,"Fast exhaust."],
+["SLO/Inc","Runbook link in Service Catalog gives?","Owner + steps + rollback|Phone book|Cookbook|Nothing",0,"MTTR cut."],
+["SLO/Inc","Postmortem needs timeline of?","Deploys+alerts+traces unified|Chat only|Email|Nothing",0,"Single pane."],
+["SLO/Inc","Auto-rollback on burn should?","Revert bad deploy|Scale blind|Add features|Ignore",0,"Safety."],
+["SLO/Inc","MTTD cut by?","Outlier at query + Watchdog|Manual|More dashboards|Ignore",0,"Proactive."],
+["SLO/Inc","Multi-service incident needs?","Service map blast radius|Single log|Guess|Restart all",0,"Dependencies."],
+["SLO/Inc","GameDay chaos latency test validates?","SLO + alerts fire|Nothing|Prod break|Ignore",0,"Resilience."],
+["SLO/Inc","Freeze when budget 0 teaches?","Reliability over velocity|Ship anyway|Delete SLO|Hide",0,"Culture."],
+["OTel/Sec","Collector tail sampling processor does?","Keep errors/slow smart|Keep all|Drop all|Random",0,"Cost+signal."],
+["OTel/Sec","Resource attrs service.name needed for?","Unified service view|Nothing|Billing|Delete",0,"Semantic conv."],
+["OTel/Sec","eBPF no-code gives?","Kernel network/profile|Nothing|Manual|Bills",0,"Zero-instr."],
+["OTel/Sec","K8s HPA on custom latency metric needs?","Adapter + tags|CPU only|Nothing|Manual",0,"Autoscale."],
+["OTel/Sec","Secret in span tag leaks, fix?","Scrub + drop high tag|Keep|Log more|Ignore",0,"PII."],
+["OTel/Sec","AI prompt injection trace shows tool exfil, Guard should?","Block + alert|Allow|Log only|Ignore",0,"Security."],
+["OTel/Sec","GPU util 95% + queue means?","Scale/ batch tune|Add CPU|Ignore|Perfect",0,"AI capacity."],
+["OTel/Sec","Token cost spike per session in agent span means?","Looping tool, cap steps|Fine|Add tools|Ignore",0,"Cost guard."],
+["OTel/Sec","MCP tool schema change breaks agent means?","Version + eval test|Ignore|More tools|Less logs",0,"Contract."],
+["OTel/Sec","BYOC deploy keeps data in VPC for?","Regulated envs|Speed only|Cost|Nothing",0,"Compliance."]];
+const BASE_EXAM=FULL200.slice(0,20).map(o=>[`${o[1]}|${o[2]}|${o[3]}`,o[3]]);
+const CODE_Q=FULL200.slice(20,40).map(o=>[`${o[1]}|${o[2]}|${o[3]}`,o[3]]);
+function fullPool(){let a=FULL200.map(o=>({cat:o[0],q:o[1],opts:o[2].split('|'),a:o[3],e:o[4]}));customQ.forEach(c=>a.push(c));return a;}
 // wrong bank + analytics
+
+const DOCS={'Fundamentals':'https://www.datadoghq.com/knowledge-center/observability/','APM Tracing':'https://docs.datadoghq.com/tracing/','APM Adv':'https://docs.datadoghq.com/tracing/','Trace JSON':'https://docs.datadoghq.com/tracing/','Profiler':'https://docs.datadoghq.com/profiler/','Logs/Metrics':'https://docs.datadoghq.com/logs/','Logs':'https://docs.datadoghq.com/logs/','DQL/Metrics':'https://docs.datadoghq.com/metrics/','RUM/Synth':'https://docs.datadoghq.com/rum/','RUM':'https://docs.datadoghq.com/rum/','Infra':'https://docs.datadoghq.com/infrastructure/','SLO/Incident':'https://docs.datadoghq.com/service_level_objectives/','SLO/Inc':'https://docs.datadoghq.com/service_level_objectives/','OTel/AI':'https://docs.datadoghq.com/opentelemetry/','OTel/Sec':'https://docs.datadoghq.com/security/','Code':'https://docs.datadoghq.com/tracing/','Tech':'https://docs.datadoghq.com/tracing/'};
+function docLink(cat){const u=DOCS[cat]||'https://docs.datadoghq.com/';return `<br>📖 <a href="${u}" target="_blank" style="color:#00d4ff">Official docs: ${cat}</a>`;}
+
 function recordResult(qid,ok){analytics[qid]=analytics[qid]||{n:0,ok:0};analytics[qid].n++;if(ok)analytics[qid].ok++;saveJ(LS_AN,analytics);if(!ok&&!wrongBank.includes(qid)){wrongBank.push(qid);saveJ(LS_WR,wrongBank.slice(-100));}}
 // SCREENS
 function show(n){['b0','b1','b2','b3','b4','b5'].forEach((id,i)=>document.getElementById(id).classList.toggle('active',i===n));if(n===0)renderPlayers();if(n===1)renderCards();if(n===2)renderExam();if(n===3)renderRPG();if(n===4)renderBlitz();if(n===5)renderPaths();}
@@ -62,15 +274,15 @@ function importCSV(){let v=document.getElementById('csv').value.trim().split('\n
 function exportCSV(){let s=customQ.map(c=>`${c.cat},${c.q},${c.opts.join('|')},${c.a},${c.e}`).join('\n');let b=new Blob([s],{type:'text/csv'});let a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pack.csv';a.click();}
 function resetWrong(){wrongBank=[];saveJ(LS_WR,[]);renderPlayers();}
 // cards + exam + blitz share helper
-let ci=0;function renderCards(){if(needLogin())return;document.getElementById('app').innerHTML=`<div class="card"><h2>Cards ${Math.min(ci+1,15)}/15</h2><div class="flashcard" onclick="this.classList.toggle('flip')" style="perspective:800px;cursor:pointer"><div class="flash-inner" style="position:relative;height:180px;transform-style:preserve-3d;transition:.5s" id="fi"><div style="position:absolute;width:100%;height:100%;backface-visibility:hidden;background:#2c2c6e;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:16px"><b>${CARDS[ci%15][0]}</b></div></div></div><p>${CARDS[ci%15][1]}</p><p>📖 Trace/span diagram: <code>[Browser]→[checkout]→[auth]→[postgres]</code> | Flame: <code>width=time</code> | Docs: docs.datadoghq.com/tracing + /profiler</p><button class="btn" onclick="mark(true)">✅ ${t('known')} +20</button><button class="btn sec" onclick="mark(false)">${t('review')}</button></div>`;}
+let ci=0;function renderCards(){if(needLogin())return;document.getElementById('app').innerHTML=`<div class="card"><h2>Cards ${Math.min(ci+1,15)}/15</h2><div class="flashcard" onclick="this.classList.toggle('flip')" style="perspective:800px;cursor:pointer"><div class="flash-inner" style="position:relative;height:180px;transform-style:preserve-3d;transition:.5s" id="fi"><div style="position:absolute;width:100%;height:100%;backface-visibility:hidden;background:#2c2c6e;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:16px"><b>${CARDS[ci%15][0]}</b></div></div></div><p>${CARDS[ci%15][1]}</p><p>📖 Trace/span diagram: <code>[Browser]→[checkout]→[auth]→[postgres]</code> | Flame: <code>width=time</code> | Docs: <a href="https://docs.datadoghq.com/tracing/" target="_blank" style="color:#00d4ff">APM Tracing</a> • <a href="https://docs.datadoghq.com/profiler/" target="_blank" style="color:#00d4ff">Profiler</a> • <a href="https://www.datadoghq.com/knowledge-center/observability/" target="_blank" style="color:#00d4ff">Observability</a></p><button class="btn" onclick="mark(true)">✅ ${t('known')} +20</button><button class="btn sec" onclick="mark(false)">${t('review')}</button></div>`;}
 // expand flash flip css quick
 const st=document.createElement('style');st.innerHTML='.flashcard.flip .flash-inner{transform:rotateY(180deg)}';document.head.appendChild(st);
 function mark(k){if(k&&curObj){curObj.xp+=20;curObj.fc=Math.min(15,(curObj.fc||0)+1);if(curObj.fc===5)alert('⚡ Fast Learner');}persist();ci++;if(ci>=15){document.getElementById('app').innerHTML='<div class="card"><h2>Done!</h2><button class="btn" onclick="ci=0;renderCards()">Replay</button></div>';return;}renderCards();}
 let ei=0,es=0,et=null,etl=600,curQ=null;
 function renderExam(){if(needLogin())return;document.getElementById('app').innerHTML=`<div class="card"><h2>Exam 20Q 10:00 + hints (Best ${curObj.bestExam||0})</h2><button class="btn" onclick="startExam(false)">Start</button> <button class="btn sec" onclick="startExam(true)">Boss rematch (misses ${wrongBank.length})</button><div>Paths: Fundamentals→APM→Profiler→RUM→SLO track in Paths tab.</div></div>`;}
 function startExam(boss){let pool=shuffle(fullPool());if(boss){let w=pool.filter((_,i)=>wrongBank.includes('q'+i));if(w.length)pool=w.concat(pool).slice(0,20);}else pool=pool.slice(0,20);ei=0;es=0;etl=600;window._pool=pool;clearInterval(et);et=setInterval(()=>{etl--;let el=document.getElementById('tm');if(el)el.innerText=Math.floor(etl/60)+':'+String(etl%60).padStart(2,'0');if(etl<=0)finishExam();},1000);showEQ();}
-function showEQ(){let pool=window._pool;if(ei>=pool.length){finishExam();return;}curQ=pool[ei];let ord=curQ.opts.map((_,i)=>i);shuffle(ord);curQ._o=ord.map(i=>curQ.opts[i]);curQ._a=ord.indexOf(curQ.a);document.getElementById('app').innerHTML=`<div class="card"><h3>Q${ei+1}/20 [${curQ.cat}] ${curQ.q}</h3><div>⏱ <span id="tm"></span> Score ${es}</div><div class="opts">${curQ._o.map((o,i)=>`<button id="ob${i}" onclick="ansE(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}</div><button class="btn sec" onclick="hint5050()">50/50 -10XP</button> <button class="btn sec" onclick="hintShow()">Reveal -10XP</button><div id="fb"></div></div>`;}
-function ansE(i){let ok=i===curQ._a;recordResult('q'+ei,ok);if(ok){es++;curObj.xp+=50;}else{wrongBank.push('q'+ei);saveJ(LS_WR,wrongBank);}persist();ei++;showEQ();}
+function showEQ(){let pool=window._pool;if(ei>=pool.length){finishExam();return;}curQ=pool[ei];let ord=curQ.opts.map((_,i)=>i);shuffle(ord);curQ._o=ord.map(i=>curQ.opts[i]);curQ._a=ord.indexOf(curQ.a);document.getElementById('app').innerHTML=`<div class="card"><h3>Q${ei+1}/20 [${curQ.cat}] ${curQ.q}</h3><div>⏱ <span id="tm"></span> Score ${es}</div><div class="opts">${curQ._o.map((o,i)=>`<button id="ob${i}" onclick="ansE(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}</div><button class="btn sec" onclick="hint5050()">50/50 -10XP</button> <button class="btn sec" onclick="hintShow()">Reveal -10XP</button><div id="fb"></div><div style="font-size:13px;opacity:.9">💡 ${curQ.e}${docLink(curQ.cat)}</div></div>`;}
+function ansE(i){let btns=document.querySelectorAll('.opts button');btns.forEach(b=>b.disabled=true);let ok=i===curQ._a;recordResult(curQ.q.slice(0,40),ok);if(ok){es++;curObj.xp+=50;btns[i].classList.add('correct');}else{wrongBank.push(curQ.q.slice(0,40));saveJ(LS_WR,wrongBank);btns[i].classList.add('wrong');btns[curQ._a].classList.add('correct');}persist();document.getElementById('fb').innerHTML=`<div style="background:#25254d;padding:10px;border-radius:10px;margin-top:8px">${ok?'✅ +50 XP':'❌ Correct: '+curQ._o[curQ._a]}<br><i>${curQ.e}</i>${docLink(curQ.cat)}<br><button class="btn" onclick="ei++;showEQ()">Next →</button></div>`;}
 function hint5050(){if(curObj.xp<10){alert('Need 10XP');return;}curObj.xp-=10;persist();let wrongs=curQ._o.map((_,i)=>i).filter(i=>i!==curQ._a).slice(0,2);wrongs.forEach(i=>{let b=document.getElementById('ob'+i);if(b)b.style.opacity=.3;});}
 function hintShow(){if(curObj.xp<10){alert('Need 10XP');return;}curObj.xp-=10;persist();document.getElementById('fb').innerHTML='Answer: '+curQ._o[curQ._a];}
 function finishExam(){clearInterval(et);if(es>(curObj.bestExam||0))curObj.bestExam=es;persist();document.getElementById('app').innerHTML=`<div class="card"><h2>${es}/20 Best ${curObj.bestExam}</h2><button class="btn" onclick="renderExam()">Retake</button></div>`;}
@@ -83,7 +295,7 @@ function rpgA(i){let pts=[100,150,200,200,250][ri];if(i===RPG[ri].g){rs+=pts;cur
 let bi=0,bs=0,bt=60,bTimer=null,combo=0;
 function renderBlitz(){if(needLogin())return;document.getElementById('app').innerHTML=`<div class="card"><h2>⚡ Blitz 60s — combo x2 after 3 streak</h2><p>Best stored in history. Pool ${fullPool().length}.</p><button class="btn" onclick="startBlitz()">Go</button></div>`;}
 function startBlitz(){bi=0;bs=0;bt=60;combo=0;window._b=shuffle(fullPool());clearInterval(bTimer);bTimer=setInterval(()=>{bt--;let el=document.getElementById('bt');if(el)el.innerText=bt;if(bt<=0){clearInterval(bTimer);curObj.xp+=bs;persist();document.getElementById('app').innerHTML=`<div class="card"><h2>Blitz ${bs}pts</h2><button class="btn" onclick="renderBlitz()">Again</button></div>`;}},1000);showB();}
-function showB(){let q=window._b[bi%window._b.length];curQ=q;let ord=q.opts.map((_,i)=>i);shuffle(ord);q._o=ord.map(i=>q.opts[i]);q._a=ord.indexOf(q.a);document.getElementById('app').innerHTML=`<div class="card"><h3>⏱ <span id="bt">${bt}</span>s | ${bs}pts | combo ${combo}</h3><p>${q.q}</p><div class="opts">${q._o.map((o,i)=>`<button onclick="ansB(${i})">${o}</button>`).join('')}</div></div>`;}
+function showB(){let q=window._b[bi%window._b.length];curQ=q;let ord=q.opts.map((_,i)=>i);shuffle(ord);q._o=ord.map(i=>q.opts[i]);q._a=ord.indexOf(q.a);document.getElementById('app').innerHTML=`<div class="card"><h3>⏱ <span id="bt">${bt}</span>s | ${bs}pts | combo ${combo}</h3><p>${q.q}</p><div class="opts">${q._o.map((o,i)=>`<button onclick="ansB(${i})">${o}</button>`).join('')}</div><div style="font-size:12px;opacity:.85">💡 ${q.e||""}${docLink(q.cat)}</div></div>`;}
 function ansB(i){let pts=10;if(i===curQ._a){combo++;if(combo>=3)pts=20;bs+=pts;}else combo=0;bi++;showB();}
 // paths
 function renderPaths(){if(needLogin())return;let paths=[['Fundamentals',['Fundamentals']],['APM Tracing',['APM','Tech']],['Profiler',['Profiler']],['RUM/Synth',['RUM']],['SLO/Incident',['SLO']]];document.getElementById('app').innerHTML='<div class="card"><h2>📊 Learning paths</h2>'+paths.map(p=>`<div><b>${p[0]}</b><div class="bar"><div style="width:${Math.min(100,(curObj.xp/1200*100))}%"></div></div></div>`).join('')+'<p>XP '+curObj.xp+'/1200 to Legend. Wrong-bank '+wrongBank.length+' due. Custom '+customQ.length+'.</p><button class="btn" onclick="show(1)">Review wrong-bank</button></div>';}
